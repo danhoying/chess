@@ -15,6 +15,17 @@ class Pawn < Piece
   def initialize(color, symbol, column, row)
     super
   end
+
+  def move_possible?(column, row)
+    new_column = column + 1
+    new_row = row
+    if new_column = column + 1 && new_row == row
+      true
+    else
+      false
+    end
+  end
+
 end
 
 class Knight < Piece
