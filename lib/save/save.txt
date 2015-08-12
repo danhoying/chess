@@ -1,0 +1,240 @@
+--- !ruby/object:Chess
+player1: &1 !ruby/object:Player
+  color: White
+player2: !ruby/object:Player
+  color: Black
+current_player: *1
+current_piece: &2 !ruby/object:Pawn
+  color: black
+  symbol: "♙"
+  column: 4
+  row: 0
+board: !ruby/object:Board
+  white_pieces:
+  - &17 !ruby/object:Pawn
+    color: white
+    symbol: "♟"
+    column: 3
+    row: 0
+  - &10 !ruby/object:Pawn
+    color: white
+    symbol: "♟"
+    column: 1
+    row: 1
+  - &14 !ruby/object:Pawn
+    color: white
+    symbol: "♟"
+    column: 2
+    row: 2
+  - &11 !ruby/object:Pawn
+    color: white
+    symbol: "♟"
+    column: 1
+    row: 3
+  - &12 !ruby/object:Pawn
+    color: white
+    symbol: "♟"
+    column: 1
+    row: 4
+  - &15 !ruby/object:Pawn
+    color: white
+    symbol: "♟"
+    column: 2
+    row: 5
+  - &16 !ruby/object:Pawn
+    color: white
+    symbol: "♟"
+    column: 2
+    row: 6
+  - &13 !ruby/object:Pawn
+    color: white
+    symbol: "♟"
+    column: 1
+    row: 7
+  - &3 !ruby/object:Rook
+    color: white
+    symbol: "♜"
+    column: 0
+    row: 0
+  - &4 !ruby/object:Knight
+    color: white
+    symbol: "♞"
+    column: 0
+    row: 1
+  - &19 !ruby/object:Bishop
+    color: white
+    symbol: "♝"
+    column: 3
+    row: 5
+  - &5 !ruby/object:Queen
+    color: white
+    symbol: "♛"
+    column: 0
+    row: 3
+  - &6 !ruby/object:King
+    color: white
+    symbol: "♚"
+    column: 0
+    row: 4
+  - &7 !ruby/object:Bishop
+    color: white
+    symbol: "♝"
+    column: 0
+    row: 5
+  - &8 !ruby/object:Knight
+    color: white
+    symbol: "♞"
+    column: 0
+    row: 6
+  - &9 !ruby/object:Rook
+    color: white
+    symbol: "♜"
+    column: 0
+    row: 7
+  black_pieces:
+  - *2
+  - &18 !ruby/object:Pawn
+    color: black
+    symbol: "♙"
+    column: 3
+    row: 1
+  - &21 !ruby/object:Pawn
+    color: black
+    symbol: "♙"
+    column: 6
+    row: 2
+  - &22 !ruby/object:Pawn
+    color: black
+    symbol: "♙"
+    column: 6
+    row: 3
+  - &23 !ruby/object:Pawn
+    color: black
+    symbol: "♙"
+    column: 6
+    row: 4
+  - &24 !ruby/object:Pawn
+    color: black
+    symbol: "♙"
+    column: 6
+    row: 5
+  - &25 !ruby/object:Pawn
+    color: black
+    symbol: "♙"
+    column: 6
+    row: 6
+  - &26 !ruby/object:Pawn
+    color: black
+    symbol: "♙"
+    column: 6
+    row: 7
+  - &27 !ruby/object:Rook
+    color: black
+    symbol: "♖"
+    column: 7
+    row: 0
+  - &20 !ruby/object:Knight
+    color: black
+    symbol: "♘"
+    column: 5
+    row: 2
+  - &28 !ruby/object:Bishop
+    color: black
+    symbol: "♗"
+    column: 7
+    row: 2
+  - &29 !ruby/object:Queen
+    color: black
+    symbol: "♕"
+    column: 7
+    row: 3
+  - &30 !ruby/object:King
+    color: black
+    symbol: "♔"
+    column: 7
+    row: 4
+  - &31 !ruby/object:Bishop
+    color: black
+    symbol: "♗"
+    column: 7
+    row: 5
+  - &32 !ruby/object:Knight
+    color: black
+    symbol: "♘"
+    column: 7
+    row: 6
+  - &33 !ruby/object:Rook
+    color: black
+    symbol: "♖"
+    column: 7
+    row: 7
+  board:
+  - - *3
+    - *4
+    - ___
+    - *5
+    - *6
+    - *7
+    - *8
+    - *9
+  - - ___
+    - *10
+    - ___
+    - *11
+    - *12
+    - ___
+    - ___
+    - *13
+  - - ___
+    - ___
+    - *14
+    - ___
+    - ___
+    - *15
+    - *16
+    - ___
+  - - *17
+    - *18
+    - ___
+    - ___
+    - ___
+    - *19
+    - ___
+    - ___
+  - - *2
+    - ___
+    - ___
+    - ___
+    - ___
+    - ___
+    - ___
+    - ___
+  - - ___
+    - ___
+    - *20
+    - ___
+    - ___
+    - ___
+    - ___
+    - ___
+  - - ___
+    - ___
+    - *21
+    - *22
+    - *23
+    - *24
+    - *25
+    - *26
+  - - *27
+    - ___
+    - *28
+    - *29
+    - *30
+    - *31
+    - *32
+    - *33
+  empty_square: ___
+initial_move: a6
+initial_column: 5
+initial_row: 0
+final_move: a5

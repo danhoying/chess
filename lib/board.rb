@@ -33,12 +33,12 @@ class Board
     @black_pieces << Pawn.new("black", ("\u2659"), 6, 7)
 
     @black_pieces << Rook.new("black", ("\u2656"), 7, 0)
-    @black_pieces << Knight.new("black", ("\u265E"), 7, 1)
+    @black_pieces << Knight.new("black", ("\u2658"), 7, 1)
     @black_pieces << Bishop.new("black", ("\u2657"), 7, 2)
     @black_pieces << Queen.new("black", ("\u2655"), 7, 3)
     @black_pieces << King.new("black", ("\u2654"), 7, 4)
     @black_pieces << Bishop.new("black", ("\u2657"), 7, 5)
-    @black_pieces << Knight.new("black", ("\u265E"), 7, 6)
+    @black_pieces << Knight.new("black", ("\u2658"), 7, 6)
     @black_pieces << Rook.new("black", ("\u2656"), 7, 7)
 
     @board = create_board
@@ -66,7 +66,7 @@ class Board
   end
 
   def display_board
-    count = 9
+    count = 9 # For labeling numbers on side of board
     puts ""
     puts "  _a_ _b_ _c_ _d_ _e_ _f_ _g_ _h_"
     @board.reverse.each do |row|
@@ -84,10 +84,15 @@ class Board
     end
      print "   a   b   c   d   e   f   g   h" 
      puts ""
-     puts ""
      @board
   end
 
+  # Checks if the current player incorrectly chose an opponent's piece.
+  def check_color?(piece, player)
+    piece == player.downcase ? true : false
+  end
+
+  # Updates current piece's location parameters and moves piece to new location.
   def move(piece, column, row) 
     piece.column = column
     piece.row = row
@@ -99,6 +104,7 @@ class Board
     @board[column][row] = @empty_square
   end
 
+  # Checks if space is an empty square.
   def space_open?(column, row)
     @board[column][row] == @empty_square ? true : false
   end
@@ -108,9 +114,4 @@ class Board
     @board[column][row]
   end
 
-  def check_piece_color(piece_array)
-  end
-
 end
-
-
