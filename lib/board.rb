@@ -111,7 +111,13 @@ class Board
 
   # Returns appropriate space on board.
   def check(column, row)
-    @board[column][row]
+    if @board[column][row] == nil
+      return nil
+    elsif @board[column][row] == "___"
+      return "___"
+    else
+      return @board[column][row]
+    end
   end
 
 end

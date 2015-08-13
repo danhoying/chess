@@ -197,11 +197,32 @@ describe "Chess" do
       it "returns true if move is valid and false if invalid." do
         @current_piece = Pawn.new("white", ("\u265F"), 1, 0)
         expect(@current_piece.move_possible?(@current_piece, 2, 0)).to eql true
-        expect(@current_piece.move_possible?(@current_piece, 3, 0)).to eql false
+        expect(@current_piece.move_possible?(@current_piece, 4, 0)).to eql false
         expect(@current_piece.move_possible?(@current_piece, 0, 0)).to eql false
-        expect(@current_piece.move_possible?(@current_piece, 2, 1)).to eql false
         expect(@current_piece.move_possible?(@current_piece, 5, 4)).to eql false
       end
+
+      it "allows pawns to move 2 spaces when in home row" do
+        @current_piece = Pawn.new("white", ("\u265F"), 1, 0)
+        expect(@current_piece.move_possible?(@current_piece, 2, 0)).to eql true
+        expect(@current_piece.move_possible?(@current_piece, 3, 0)).to eql true
+      end
+
+      it "can move diagonally to capture pieces" do
+        @current_piece = Pawn.new("white", ("\u265F"), 4, 4)
+        expect(@current_piece.move_possible?(@current_piece, 5, 5)).to eql true
+        expect(@current_piece.move_possible?(@current_piece, 5, 3)).to eql true
+      end
+
+      # it "checks for correct diagonal movement" do
+      #   column = 5
+      #   row = 5
+      #   @current_piece = Pawn.new("white", ("\u265F"), 3, 4)
+      #   @board.move(@current_piece, 4, 4)
+      #   @opponent = Pawn.new("black", ("\u265F"), 6, 5)
+      #   @board.move(@opponent, column, row)
+      #   expect(game.pawn_diagonal?(@current_piece, column, row)).to eql true
+      # end
     end
   end
 
