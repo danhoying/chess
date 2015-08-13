@@ -162,9 +162,15 @@ class Chess
     end
   end
 
+  # Runs through all possible moves and determines if the current piece is 
+  # being blocked and cannot move. If so, allows the player to choose a new
+  # piece. Also checks for any pieces in the way of possible moves and adds 
+  # them to an array @bishop_path_pieces.
   def bishop_impossible(piece, column, row)
     if piece.is_a?(Bishop)
       nearby = []
+      total_possible = []
+      @bishop_path_pieces = []
       items = 0
       count = 1
       c = piece.column
@@ -179,6 +185,9 @@ class Chess
         possible_moves.each do |move|
           if count == 2 && move.all? { |value| value >= 0 } && move.all? { |value| value <= 7 }
             nearby << move
+          end
+          if move.all? { |value| value >= 0 } && move.all? { |value| value <= 7 }
+            total_possible << move
           end
         end
         nearby.each do |i|
@@ -192,13 +201,24 @@ class Chess
           puts "A move is not possible here. Please select another piece."
           select_piece
         end
+        total_possible.each do |j|
+          if @board.check(j[0], j[1]) != "___" && !@bishop_path_pieces.include?(j)
+            @bishop_path_pieces << j
+          end
+        end
       end   
     end
   end
 
+  # Runs through all possible moves and determines if the current piece is 
+  # being blocked and cannot move. If so, allows the player to choose a new
+  # piece. Also checks for any pieces in the way of possible moves and adds 
+  # them to an array @rook_path_pieces.
   def rook_impossible(piece, column, row)
     if piece.is_a?(Rook) 
       nearby = []
+      total_possible = []
+      @rook_path_pieces = []
       items = 0
       count = 1
       c = piece.column
@@ -214,6 +234,9 @@ class Chess
           if count == 2 && move.all? { |value| value >= 0 } && move.all? { |value| value <= 7 }
             nearby << move
           end
+          if move.all? { |value| value >= 0 } && move.all? { |value| value <= 7 }
+            total_possible << move
+          end
         end
         nearby.each do |i|
           if @board.check(i[0], i[1]) != "___" && @board.check(i[0], i[1]).color == piece.color
@@ -226,10 +249,18 @@ class Chess
           puts "A move is not possible here. Please select another piece."
           select_piece
         end  
+        total_possible.each do |j|
+          if @board.check(j[0], j[1]) != "___" && !@rook_path_pieces.include?(j)
+            @rook_path_pieces << j
+          end
+        end
       end
     end
   end
 
+  # Runs through all possible moves and determines if the current piece is 
+  # being blocked and cannot move. If so, allows the player to choose a new
+  # piece.
   def knight_impossible(piece, column, row)
     if piece.is_a?(Knight)
       items = 0
@@ -238,7 +269,9 @@ class Chess
       possible_moves = [[c + 2, r + 1], [c + 2, r - 1], [c - 2, r + 1], [c - 2, r - 1],
                       [c + 1, r + 2], [c - 1, r + 2], [c + 1, r - 2], [c - 1, r - 2]]
       possible_moves.each do |move|
-        if @board.check(move[0], move[1]) != "___" && @board.check(move[0], move[1]).color == piece.color
+        if move.all? { |value| value >= 0 } && move.all? { |value| value <= 7 } && 
+            @board.check(move[0], move[1]) != "___" && 
+            @board.check(move[0], move[1]).color == piece.color
           items += 1
         else 
           items = 0
@@ -251,9 +284,15 @@ class Chess
     end
   end
 
+  # Runs through all possible moves and determines if the current piece is 
+  # being blocked and cannot move. If so, allows the player to choose a new
+  # piece. Also checks for any pieces in the way of possible moves and adds 
+  # them to an array @queen_path_pieces.
   def queen_impossible(piece, column, row)
     if piece.is_a?(Queen) 
       nearby = []
+      total_possible = []
+      @queen_path_pieces = []
       items = 0
       count = 1
       c = piece.column
@@ -273,6 +312,9 @@ class Chess
           if count == 2 && move.all? { |value| value >= 0 } && move.all? { |value| value <= 7 }
             nearby << move
           end
+          if move.all? { |value| value >= 0 } && move.all? { |value| value <= 7 }
+            total_possible << move
+          end
         end
         nearby.each do |i|
           if @board.check(i[0], i[1]) != "___" && @board.check(i[0], i[1]).color == piece.color
@@ -285,10 +327,18 @@ class Chess
           puts "A move is not possible here. Please select another piece."
           select_piece
         end  
+        total_possible.each do |j|
+          if @board.check(j[0], j[1]) != "___" && !@queen_path_pieces.include?(j)
+            @queen_path_pieces << j
+          end
+        end
       end
     end
   end
 
+  # Runs through all possible moves and determines if the current piece is 
+  # being blocked and cannot move. If so, allows the player to choose a new
+  # piece.
   def king_impossible(piece, column, row)
     if piece.is_a?(King) 
       nearby = []
@@ -373,7 +423,10 @@ class Chess
   def take_piece(piece, column, row)
     lost_piece = @board.check(column, row)
     ensure_correct_move(@current_piece, column, row)
-    puts "#{current_player.color} has captured a #{lost_piece.color} #{lost_piece.class}." 
+    puts ""
+    puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+    puts "#{current_player.color} has captured a #{lost_piece.color} #{lost_piece.class}!" 
+    puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
   end
 
   # Makes sure pieces can only make legal moves. Also controls pawn movement
@@ -388,11 +441,16 @@ class Chess
       elsif piece.is_a?(Pawn) && !pawn_diagonal?(piece, column, row)
         alternate_pawn_moves(piece, column, row)
         return piece
-      elsif piece.is_a?(Bishop)
-        block_bishop(piece, column, row)
+      elsif piece.is_a?(Bishop) && !block_bishop?(piece, column, row)
         make_legal_move(piece, column, row)
         return piece
-      else
+      elsif piece.is_a?(Rook) && !block_rook?(piece, column, row)
+        make_legal_move(piece, column, row)
+        return piece
+      elsif piece.is_a?(Queen) && !block_queen?(piece, column, row)
+        make_legal_move(piece, column, row)
+        return piece  
+      elsif piece.is_a?(Knight) || piece.is_a?(King)
         make_legal_move(piece, column, row)
         return piece
       end
@@ -400,51 +458,114 @@ class Chess
     move_piece
   end
 
-  def block_bishop(piece, column, row)
-    count = 1
-    c = piece.column
-    r = piece.row
-    if column > c && row > r
-      until count == column
-        c += 1
-        r += 1
-        check_piece = @board.check(c, r)
-        if check_piece != "___"
+  # Determines if the chosen destination space is beyond the location of a
+  # piece in @bishop_path_pieces and returns true if so, false if not. This
+  # method prevents "jumping" over pieces to reach the destination square.  
+  def block_bishop?(piece, column, row)
+    @bishop_path_pieces.each do |item|
+      if item[0] - piece.column > 0 && item[1] - piece.row > 0 # up right
+        if column > item[0] && row > item[1]
           puts "There is a piece blocking your move.  Enter another destination."
+          return true
         end
-        count += 1
-      end
-    elsif column > c && row < r
-      until count == column
-        c += 1
-        r -= 1
-        check_piece = @board.check(c, r)
-        if check_piece != "___"
+      elsif item[0] - piece.column > 0 && item[1] - piece.row < 0 # up left
+        if column > item[0] && row < item[1]
           puts "There is a piece blocking your move.  Enter another destination."
+          return true
         end
-        count += 1
-      end
-    elsif column < c && row < r
-      until count == column
-        c -= 1
-        r -= 1
-        check_piece = @board.check(c, r)
-        if check_piece != "___"
+      elsif item[0] - piece.column < 0 && item[1] - piece.row > 0 # down right
+        if column < item[0] && row > item[1]
           puts "There is a piece blocking your move.  Enter another destination."
+          return true
         end
-        count += 1
-      end
-    elsif column < c && row > r
-      until count == column
-        c -= 1
-        r += 1
-        check_piece = @board.check(c, r)
-        if check_piece != "___"
+      elsif item[0] - piece.column < 0 && item[1] - piece.row < 0 # down left
+        if column < item[0] && row < item[1]
           puts "There is a piece blocking your move.  Enter another destination."
+          return true
         end
-        count += 1
       end
     end
+    return false
+  end
+
+  # Determines if the chosen destination space is beyond the location of a
+  # piece in @rook_path_pieces and returns true if so, false if not. This
+  # method prevents "jumping" over pieces to reach the destination square.  
+  def block_rook?(piece, column, row)
+    @rook_path_pieces.each do |item|
+      if item[0] - piece.column > 0 && item[1] - piece.row == 0 # up
+        if column > item[0] && row == item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column == 0 && item[1] - piece.row < 0 # left
+        if column == item[0] && row < item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column < 0 && item[1] - piece.row == 0 # down 
+        if column < item[0] && row == item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column == 0 && item[1] - piece.row > 0 # right
+        if column == item[0] && row > item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      end
+    end
+    return false
+  end
+
+  # Determines if the chosen destination space is beyond the location of a
+  # piece in @queen_path_pieces and returns true if so, false if not. This
+  # method prevents "jumping" over pieces to reach the destination square.  
+  def block_queen?(piece, column, row)
+    @queen_path_pieces.each do |item|
+      if item[0] - piece.column > 0 && item[1] - piece.row > 0 # up right
+        if column > item[0] && row > item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column > 0 && item[1] - piece.row < 0 # up left
+        if column > item[0] && row < item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column < 0 && item[1] - piece.row > 0 # down right
+        if column < item[0] && row > item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column < 0 && item[1] - piece.row < 0 # down left
+        if column < item[0] && row < item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column > 0 && item[1] - piece.row == 0 # up
+        if column > item[0] && row == item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column == 0 && item[1] - piece.row < 0 # left
+        if column == item[0] && row < item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column < 0 && item[1] - piece.row == 0 # down 
+        if column < item[0] && row == item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      elsif item[0] - piece.column == 0 && item[1] - piece.row > 0 # right
+        if column == item[0] && row > item[1]
+          puts "There is a piece blocking your move.  Enter another destination."
+          return true
+        end
+      end
+    end
+    return false
   end
 
   # The class method #move_possible is bypassed and this method is used instead
@@ -477,46 +598,46 @@ class Chess
   # diagonally to capture them.  Returns true if so and false if not.
   def pawn_diagonal?(piece, column, row)
     if piece.color == "white" && !@board.space_open?(piece.column + 1, piece.row + 1) && 
-      @board.check(piece.column + 1, piece.row + 1) != nil &&
-      @board.check(piece.column + 1, piece.row + 1).color == "black" &&
-      @board.space_open?(piece.column + 1, piece.row - 1)
+        @board.check(piece.column + 1, piece.row + 1) != nil &&
+        @board.check(piece.column + 1, piece.row + 1).color == "black" &&
+        @board.space_open?(piece.column + 1, piece.row - 1)
       if @board.check(piece.column + 1, piece.row + 1) == @board.check(column, row)
         return true 
       else
         return false
       end
     elsif piece.color == "white" && !@board.space_open?(piece.column + 1, piece.row - 1) &&
-      @board.check(piece.column + 1, piece.row - 1) != nil &&
-      @board.check(piece.column + 1, piece.row - 1).color == "black" &&
-      @board.space_open?(piece.column + 1, piece.row + 1)
+        @board.check(piece.column + 1, piece.row - 1) != nil &&
+        @board.check(piece.column + 1, piece.row - 1).color == "black" &&
+        @board.space_open?(piece.column + 1, piece.row + 1)
       if @board.check(piece.column + 1, piece.row - 1) == @board.check(column, row)
         return true 
       else
         return false
       end
     elsif piece.color == "white" && @board.space_open?(piece.column + 1, piece.row + 1) && 
-      @board.space_open?(piece.column + 1, piece.row - 1)
+        @board.space_open?(piece.column + 1, piece.row - 1)
       return false
     elsif piece.color == "black" && !@board.space_open?(piece.column - 1, piece.row + 1) && 
-      @board.check(piece.column - 1, piece.row + 1) != nil &&
-      @board.check(piece.column - 1, piece.row + 1).color == "white" &&
-      @board.space_open?(piece.column - 1, piece.row - 1)
+        @board.check(piece.column - 1, piece.row + 1) != nil &&
+        @board.check(piece.column - 1, piece.row + 1).color == "white" &&
+        @board.space_open?(piece.column - 1, piece.row - 1)
       if @board.check(piece.column - 1, piece.row + 1) == @board.check(column, row)
         return true 
       else
         return false
       end
     elsif piece.color == "black" && !@board.space_open?(piece.column - 1, piece.row - 1) &&
-      @board.check(piece.column - 1, piece.row - 1) != nil &&
-      @board.check(piece.column - 1, piece.row - 1).color == "white" &&
-      @board.space_open?(piece.column - 1, piece.row + 1)
+        @board.check(piece.column - 1, piece.row - 1) != nil &&
+        @board.check(piece.column - 1, piece.row - 1).color == "white" &&
+        @board.space_open?(piece.column - 1, piece.row + 1)
       if @board.check(piece.column - 1, piece.row - 1) == @board.check(column, row)
         return true 
       else
         return false
       end
     elsif piece.color == "black" && @board.space_open?(piece.column - 1, piece.row + 1) && 
-      @board.space_open?(piece.column - 1, piece.row - 1)
+        @board.space_open?(piece.column - 1, piece.row - 1)
       return false
     end
     return false
