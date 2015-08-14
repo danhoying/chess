@@ -13,7 +13,13 @@ class Chess
     @current_player = player1
     @current_piece = Piece.new("white", nil, nil, nil)
     @board = Board.new
-    @en_passant = nil
+    @en_passant = []
+    @white_king_moves = 0
+    @left_white_rook_moves = 0
+    @right_white_rook_moves = 0
+    @black_king_moves = 0
+    @left_black_rook_moves = 0
+    @right_black_rook_moves = 0
   end
 
   def start_game
@@ -28,11 +34,170 @@ class Chess
     until false
       display_save_message
       @board.display_board
-      select_piece
-      move_piece
-      en_passant_cancel(@current_piece)
+      if castling_possible?(@board)
+        get_castling_input(@board)
+      else
+        select_piece
+        move_piece
+      end
+      if @en_passant != []
+        en_passant_cancel(@current_piece)
+      end
       display_past_move
       switch_players
+    end
+  end
+
+  # Asks the player to type 'castle' to perform castling.  If not, continue turn
+  # as usual.
+  def get_castling_input(board)
+    puts ""
+    print "#{@current_player.color}, type 'castle' if you would like to perform castling: "
+    input = gets.chomp
+    if input.include?('castle')
+      perform_castling(board)
+    else
+      select_piece
+      move_piece
+    end
+  end
+
+  def get_castling_choice(board)
+    puts ""
+    puts "#{@current_player.color}, you can perform short castling or long castling."
+    print "Please type 'short' to do short castling or 'long' to do long castling: "
+    input = gets.chomp
+  end
+
+  # Determines if all castling conditions are met. If so, changes an instance
+  # variable to true and returns true. Past movement is determined by the
+  # #check_for_castling_movement method.
+  def castling_possible?(board)
+    if @current_player.color.downcase == "white"
+      if board.space_open?(0, 1) && board.space_open?(0, 2) && board.space_open?(0, 3) &&
+          @white_king_moves == 0 && @left_white_rook_moves == 0 && 
+          board.space_open?(0, 5) && board.space_open?(0, 6) &&
+          @white_king_moves == 0 && @right_white_rook_moves == 0
+        @white_castle_long = true
+        @white_castle_short = true
+        return true
+      elsif board.space_open?(0, 1) && board.space_open?(0, 2) && board.space_open?(0, 3) &&
+          @white_king_moves == 0 && @left_white_rook_moves == 0
+        @white_castle_long = true
+        return true
+      elsif board.space_open?(0, 5) && board.space_open?(0, 6) &&
+          @white_king_moves == 0 && @right_white_rook_moves == 0
+        @white_castle_short = true
+        return true
+      end
+    elsif @current_player.color.downcase == "black"
+      if board.space_open?(7, 1) && board.space_open?(7, 2) && board.space_open?(7, 3) &&
+          @black_king_moves == 0 && @left_black_rook_moves == 0 && 
+          board.space_open?(7, 5) && board.space_open?(7, 6) &&
+          @black_king_moves == 0 && @right_black_rook_moves == 0
+        @black_castle_short = true
+        @black_castle_long = true
+        return true
+      elsif board.space_open?(7, 1) && board.space_open?(7, 2) && board.space_open?(7, 3) &&
+          @black_king_moves == 0 && @left_black_rook_moves == 0
+        @black_castle_long = true
+        return true
+      elsif board.space_open?(7, 5) && board.space_open?(7, 6) &&
+          @black_king_moves == 0 && @right_black_rook_moves == 0
+        @black_castle_short = true
+        return true
+      end
+    end
+    @white_castle_long = false
+    @white_castle_short = false
+    @black_castle_long = false
+    @black_castle_short = false
+    return false
+  end
+
+  # Method that determines whether to perform long castling or short castling
+  # and moves the pieces accordingly. Handles the edge case of having both
+  # castling methods possible at once and asks for the player's choice.
+  def perform_castling(board)
+    if @white_castle_long == true && @white_castle_short == true
+      input = get_castling_choice(board)
+      if input.include?('long')
+        white_king = board.check(0, 4)
+        white_left_rook = board.check(0, 0)
+        board.move(white_king, 0, 2)
+        board.move(white_left_rook, 0, 3)
+        board.empty_space(0, 4)
+        board.empty_space(0, 0)
+        @white_king_moves = 1
+        @white_castle_long = false
+      elsif input.include?('short')
+        white_king = board.check(0, 4)
+        white_right_rook = board.check(0, 7)
+        board.move(white_king, 0, 6)
+        board.move(white_right_rook, 0, 5)
+        board.empty_space(0, 7)
+        board.empty_space(0, 4)
+        @white_king_moves = 1
+        @white_castle_short = false
+      end
+    elsif @white_castle_long == true
+      white_king = board.check(0, 4)
+      white_left_rook = board.check(0, 0)
+      board.move(white_king, 0, 2)
+      board.move(white_left_rook, 0, 3)
+      board.empty_space(0, 4)
+      board.empty_space(0, 0)
+      @white_king_moves = 1
+      @white_castle_long = false
+    elsif @white_castle_short == true
+      white_king = board.check(0, 4)
+      white_right_rook = board.check(0, 7)
+      board.move(white_king, 0, 6)
+      board.move(white_right_rook, 0, 5)
+      board.empty_space(0, 7)
+      board.empty_space(0, 4)
+      @white_king_moves = 1
+      @white_castle_short = false
+
+    elsif @black_castle_long == true && @black_castle_short == true
+      input = get_castling_choice(board)
+      if input.include?('long')
+        black_king = board.check(7, 4)
+        black_left_rook = board.check(7, 0)
+        board.move(black_king, 7, 2)
+        board.move(black_left_rook, 7, 3)
+        board.empty_space(7, 4)
+        board.empty_space(7, 0)
+        @black_king_moves = 1
+        @black_castle_long == false
+      elsif input.include?('short')
+        black_king = board.check(7, 4)
+        black_right_rook = board.check(7, 7)
+        board.move(black_king, 7, 6)
+        board.move(black_right_rook, 7, 5)
+        board.empty_space(7, 7)
+        board.empty_space(7, 4)
+        @black_king_moves = 1
+        @black_castle_short == false
+      end
+    elsif @black_castle_long == true
+      black_king = board.check(7, 4)
+      black_left_rook = board.check(7, 0)
+      board.move(black_king, 7, 2)
+      board.move(black_left_rook, 7, 3)
+      board.empty_space(7, 4)
+      board.empty_space(7, 0)
+      @black_king_moves = 1
+      @black_castle_long == false
+    elsif @black_castle_short == true
+      black_king = board.check(7, 4)
+      black_right_rook = board.check(7, 7)
+      board.move(black_king, 7, 6)
+      board.move(black_right_rook, 7, 5)
+      board.empty_space(7, 7)
+      board.empty_space(7, 4)
+      @black_king_moves = 1
+      @black_castle_short == false
     end
   end
 
@@ -106,7 +271,10 @@ class Chess
     @current_player == @player1 ? @current_player = @player2 : @current_player = @player1
   end
 
-  # Asks current player to select a piece to move.
+  # Asks current player to select a piece to move. Also allows player to type
+  # 'save' to save and quit the game.  Checks if the selected piece is of the
+  # correct color and if it is possible to move.  If not, allows the player to
+  # select a new piece.
   def select_piece
     move = "99"
     column = 99
@@ -135,6 +303,7 @@ class Chess
     check_for_move_possibility(@current_piece, column, row)
   end
 
+  # Checks for impossiblity of movement for each type of piece.
   def check_for_move_possibility(piece, column, row)
     pawn_impossible(piece, column, row)
     bishop_impossible(piece, column, row)
@@ -386,6 +555,8 @@ class Chess
   end
 
   # Asks current player to choose the selected piece's destination location.
+  # Forbids the player from capturing own piece and checks if the chosen move
+  # is valid.
   def move_piece
     move = "99"
     column = 99
@@ -610,6 +781,8 @@ class Chess
     move_piece
   end
 
+  # Checks if a white piece is at risk for being captured en passant, and 
+  # returns true if so.
   def en_passant_white?(piece)
     c = piece.column
     r = piece.row
@@ -630,6 +803,8 @@ class Chess
     return false
   end
 
+  # Checks if a black piece is at risk for being captured en passant, and 
+  # returns true if so.
   def en_passant_black?(piece)
     c = piece.column
     r = piece.row
@@ -650,6 +825,7 @@ class Chess
     return false
   end
 
+  # Checks if a piece has moved into the correct position to capture en passant.
   def en_passant_capture?(piece, column, row)
     if piece.column == @en_passant.column && piece.row - @en_passant.row == 1 ||
         @en_passant.row - piece.row == 1
@@ -662,6 +838,7 @@ class Chess
     return false
   end
 
+  # Performs the en passant capture if possible.
   def en_passant_move(piece, column, row)
     if @en_passant != [] && piece.color == "white" && @en_passant.color == "black"
       if en_passant_capture?(piece, column, row)
@@ -797,6 +974,7 @@ class Chess
   def make_legal_move(piece, column, row)
     @board.empty_space(@initial_column, @initial_row)
     @board.move(piece, column, row)
+    check_for_castling_movement(piece)
     if piece.is_a?(Pawn) && piece.color == "white" && piece.column == 7
       choice = choose_promotion(piece, column, row)
       piece = promote_white(piece, column, row, choice)
@@ -807,6 +985,29 @@ class Chess
       piece = promote_black(piece, column, row, choice)
       @board.move(piece, column, row)
       return piece
+    end
+  end
+
+  # Updates a counter for each rook and king if they are moved, thus invalidating
+  # the ability to perform castling.
+  def check_for_castling_movement(piece)
+    if piece.is_a?(King) && piece.color == "white"
+      @white_king_moves = 1
+    elsif piece.is_a?(Rook) && piece.color == "white" && @initial_column == 0 &&
+        @initial_row == 0
+      @left_white_rook_moves = 1
+    elsif piece.is_a?(Rook) && piece.color == "white" && @initial_column == 0 &&
+        @initial_row == 7
+      @right_white_rook_moves = 1
+
+    elsif piece.is_a?(King) && piece.color == "black"
+      @black_king_moves = 1
+    elsif piece.is_a?(Rook) && piece.color == "black" && @initial_column == 7 &&
+        @initial_row == 0
+      @left_black_rook_moves = 1
+    elsif piece.is_a?(Rook) && piece.color == "black" && @initial_column == 7 &&
+        @initial_row == 7
+      @right_black_rook_moves = 1
     end
   end
 

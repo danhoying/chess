@@ -119,5 +119,4 @@ class Board
       return @board[column][row]
     end
   end
-
 end

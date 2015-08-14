@@ -1,3 +1,4 @@
+# Creates Piece class, which all individual types of piece classes inherit from.
 class Piece
 
   attr_accessor :color, :symbol, :column, :row
@@ -10,6 +11,9 @@ class Piece
   end
 end
 
+# Each of these class methods contains a #move_possible? method that contains
+# each piece type's valid moves. Returns true if a valid move is being performed
+# and false if not.
 class Pawn < Piece
 
   def initialize(color, symbol, column, row)
@@ -39,7 +43,6 @@ class Pawn < Piece
       end
     end
   end
-
 end
 
 class Knight < Piece
