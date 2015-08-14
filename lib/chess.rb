@@ -13,6 +13,7 @@ class Chess
     @current_player = player1
     @current_piece = Piece.new("white", nil, nil, nil)
     @board = Board.new
+    @en_passant = nil
   end
 
   def start_game
@@ -29,6 +30,7 @@ class Chess
       @board.display_board
       select_piece
       move_piece
+      en_passant_cancel(@current_piece)
       display_past_move
       switch_players
     end
@@ -145,14 +147,14 @@ class Chess
   # Special method that determines if two pieces are facing one another and
   # cannot move. Allows the player to choose a new piece.
   def pawn_impossible(piece, column, row)
-    if piece.is_a?(Pawn) && piece.color == "white" && 
+    if piece.is_a?(Pawn) && piece.color == "white" && @en_passant == [] &&
       @board.check(column + 1, row + 1) != nil &&
       @board.check(column + 1, row - 1) != nil &&
       !@board.space_open?(column + 1, row) && @board.space_open?(column + 1, row + 1) && 
         @board.space_open?(column + 1, row - 1)
       puts "A move is not possible here. Please select another piece."
       select_piece
-    elsif piece.is_a?(Pawn) && piece.color == "black" && 
+    elsif piece.is_a?(Pawn) && piece.color == "black" && @en_passant == [] &&
       @board.check(column -1, row + 1) != nil &&
       @board.check(column -1, row - 1) != nil &&
       !@board.space_open?(column - 1, row) && @board.space_open?(column - 1, row + 1) && 
@@ -440,6 +442,9 @@ class Chess
         return piece
       elsif piece.is_a?(Pawn) && !pawn_diagonal?(piece, column, row)
         alternate_pawn_moves(piece, column, row)
+        if @en_passant != []
+          en_passant_move(piece, column, row)
+        end
         return piece
       elsif piece.is_a?(Bishop) && !block_bishop?(piece, column, row)
         make_legal_move(piece, column, row)
@@ -575,8 +580,13 @@ class Chess
       if column - piece.column == 1 && piece.row == row
         make_legal_move(piece, column, row)
         return piece
-      elsif piece.column == 1 && column - piece.column == 2 && piece.row == row
+      elsif piece.column == 1 && column - piece.column == 2 && piece.row == row   
         make_legal_move(piece, column, row)
+        if en_passant_white?(piece)
+          @en_passant = piece
+        end
+        return piece
+      elsif @en_passant != [] && en_passant_capture?(piece, column, row)
         return piece
       else
         puts "That move is not possible."
@@ -587,10 +597,105 @@ class Chess
         return piece
       elsif piece.column == 6 && piece.column - column == 2 && piece.row == row
         make_legal_move(piece, column, row)
+        if en_passant_black?(piece)
+          @en_passant = piece
+        end
+        return piece
+      elsif @en_passant != [] && en_passant_capture?(piece, column, row)
         return piece
       else
         puts "That move is not possible."
       end
+    end
+    move_piece
+  end
+
+  def en_passant_white?(piece)
+    c = piece.column
+    r = piece.row
+    possible = []
+    neighbors = []
+    check_sides = [[c, r - 1], [c, r + 1]]
+    check_sides.each do |check|
+      if check.all? { |value| value >= 0 } && check.all? { |value| value <= 7 }
+        possible << check
+      end
+    end
+    possible.each do |item|
+      if @board.check(item[0], item[1]) != "___" && 
+          @board.check(item[0], item[1]).color == "black"
+          return true
+      end
+    end
+    return false
+  end
+
+  def en_passant_black?(piece)
+    c = piece.column
+    r = piece.row
+    possible = []
+    neighbors = []
+    check_sides = [[c, r - 1], [c, r + 1]]
+    check_sides.each do |check|
+      if check.all? { |value| value >= 0 } && check.all? { |value| value <= 7 }
+        possible << check
+      end
+    end
+    possible.each do |item|
+      if @board.check(item[0], item[1]) != "___" && 
+          @board.check(item[0], item[1]).color == "white"
+          return true
+      end
+    end
+    return false
+  end
+
+  def en_passant_capture?(piece, column, row)
+    if piece.column == @en_passant.column && piece.row - @en_passant.row == 1 ||
+        @en_passant.row - piece.row == 1
+      if piece.color == "black" && column == @en_passant.column - 1 && row == @en_passant.row
+        return true
+      elsif piece.color == "white" && column - @en_passant.column == 1 && row == @en_passant.row
+        return true
+      end
+    end 
+    return false
+  end
+
+  def en_passant_move(piece, column, row)
+    if @en_passant != [] && piece.color == "white" && @en_passant.color == "black"
+      if en_passant_capture?(piece, column, row)
+        @board.move(piece, column, row)
+        @board.empty_space(@initial_column, @initial_row)
+        @board.empty_space(@en_passant.column, @en_passant.row)
+        puts ""
+        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+        puts "#{current_player.color} has captured a #{@en_passant.color} #{@en_passant.class}!" 
+        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+        @en_passant = []
+        return piece
+      end
+    elsif @en_passant != [] && piece.color == "black" && @en_passant.color == "white"
+      if en_passant_capture?(piece, column, row)
+        @board.move(piece, column, row)
+        @board.empty_space(@initial_column, @initial_row)
+        @board.empty_space(@en_passant.column, @en_passant.row)
+        puts ""
+        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+        puts "#{current_player.color} has captured a #{@en_passant.color} #{@en_passant.class}!" 
+        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+        @en_passant = []
+        return piece
+      end
+    end
+  end
+
+  # Ensures that a piece can be captured en passant on the subsequent turn only.
+  def en_passant_cancel(piece)
+    if @en_passant != [] && @en_passant.color == piece.color
+      @en_passant
+    elsif @en_passant != [] && @en_passant.color != piece.color
+      @en_passant = []
     end
   end
 
@@ -643,9 +748,66 @@ class Chess
     return false
   end
 
+  # Gets player's choice for piece to promote to.
+  def choose_promotion(piece, column, row)
+    choice = 'p'
+    puts ""
+    puts "Congratulations, #{@current_player.color}, your pawn has been promoted!"
+    puts "What would you like your promotion to be? Please enter"
+    puts "q, r, k, or b for queen, rook, knight, or bishop, respectively."
+    until choice.include?('q') || choice.include?('r') || choice.include?('k') ||
+        choice.include?('b')
+      puts "" 
+      print "#{@current_player.color}, please select your promotion: "
+      choice = gets.chomp
+    end
+    choice
+  end
+
+  # Promotes white pawns.
+  def promote_white(piece, column, row, choice)
+    case choice
+    when 'q'
+      piece = Queen.new("white", ("\u265B"), column, row)
+    when 'r'
+      piece = Rook.new("white", ("\u265C"), column, row)
+    when 'k'
+      piece = Knight.new("white", ("\u265E"), column, row)
+    when 'b'
+      piece = Bishop.new("white", ("\u265D"), column, row)
+    end
+  end
+
+  # Promotes black pawns
+  def promote_black(piece, column, row, choice)
+    case choice
+    when 'q'
+      piece = Queen.new("black", ("\u2655"), column, row)
+    when 'r'
+      piece = Rook.new("black", ("\u2656"), column, row)
+    when 'k'
+      piece = Knight.new("black", ("\u2658"), column, row)
+    when 'b'
+      piece = Bishop.new("black", ("\u2657"), column, row)
+    end
+  end
+
+  # Moves piece to destination square and empties previous position. If piece
+  # is a pawn moving into the 8th rank, allows piece to be promoted.
   def make_legal_move(piece, column, row)
     @board.empty_space(@initial_column, @initial_row)
     @board.move(piece, column, row)
+    if piece.is_a?(Pawn) && piece.color == "white" && piece.column == 7
+      choice = choose_promotion(piece, column, row)
+      piece = promote_white(piece, column, row, choice)
+      @board.move(piece, column, row)
+      return piece
+    elsif piece.is_a?(Pawn) && piece.color == "black" && piece.column == 0
+      choice = choose_promotion(piece, column, row)
+      piece = promote_black(piece, column, row, choice)
+      @board.move(piece, column, row)
+      return piece
+    end
   end
 
   # Translates the user input into appropriate row on the board.
