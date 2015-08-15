@@ -14,6 +14,7 @@ class Chess
     @current_piece = Piece.new("white", nil, nil, nil)
     @board = Board.new
     @en_passant = []
+    @in_check = false
     @white_king_moves = 0
     @left_white_rook_moves = 0
     @right_white_rook_moves = 0
@@ -626,18 +627,356 @@ class Chess
       elsif piece.is_a?(Queen) && !block_queen?(piece, column, row)
         make_legal_move(piece, column, row)
         return piece  
-      elsif piece.is_a?(Knight) || piece.is_a?(King)
+      elsif piece.is_a?(Knight)
         make_legal_move(piece, column, row)
         return piece
+      elsif piece.is_a?(King)
+        if @in_check == true
+          puts "That move puts your king into check!  Choose another move."
+        else
+          make_legal_move(piece, column, row)
+          return piece
+        end
       end
     end
     move_piece
   end
 
+  # Returns true if white pawn puts king into check, false if not. 
+  def white_pawn_check?(piece, column, row)
+    if piece.is_a?(Pawn) && piece.color == "white"
+      c = piece.column
+      r = piece.row
+      possible = []
+      check_sides = [[c + 1, r - 1], [c + 1, r + 1]]
+      check_sides.each do |check|
+        if check.all? { |value| value >= 0 } && check.all? { |value| value <= 7 }
+          possible << check
+        end
+      end
+      possible.each do |item|
+        if @board.check(item[0], item[1]) != "___" && 
+            @board.check(item[0], item[1]).color != piece.color &&
+            @board.check(item[0], item[1]).is_a?(King)
+          return true
+        end
+      end
+    end
+    return false
+  end
+
+  # Returns true if black pawn puts king into check, false if not.
+  def black_pawn_check?(piece, column, row)
+    if piece.is_a?(Pawn) && piece.color == "black"
+      c = piece.column
+      r = piece.row
+      possible = []
+      check_sides = [[c - 1, r - 1], [c - 1, r + 1]]
+      check_sides.each do |check|
+        if check.all? { |value| value >= 0 } && check.all? { |value| value <= 7 }
+          possible << check
+        end
+      end
+      possible.each do |item|
+        if @board.check(item[0], item[1]) != "___" && 
+            @board.check(item[0], item[1]).color != piece.color &&
+            @board.check(item[0], item[1]).is_a?(King)
+          return true
+        end
+      end
+    end
+    return false
+  end
+
+  def knight_check?(piece, column, row)
+    if piece.is_a?(Knight)
+      c = piece.column
+      r = piece.row
+      possible = []
+      possible_moves = [[c + 2, r + 1], [c + 2, r - 1], [c - 2, r + 1], [c - 2, r - 1],
+                        [c + 1, r + 2], [c - 1, r + 2], [c + 1, r - 2], [c - 1, r - 2]]
+      possible_moves.each do |move|
+        if move.all? { |value| value >= 0 } && move.all? { |value| value <= 7 }
+          possible << move
+        end
+      end
+      possible.each do |item|
+        if @board.check(item[0], item[1]) != "___" && 
+            @board.check(item[0], item[1]).color != piece.color &&
+            @board.check(item[0], item[1]).is_a?(King)
+          return true
+        end
+      end
+    end
+    return false
+  end
+
+  # Returns true if bishop puts king into check, false if not.
+  def bishop_check?(piece, column, row)
+    if piece.is_a?(Bishop)
+      blocking_up_right = false
+      blocking_up_left = false
+      blocking_down_left = false
+      blocking_down_right = false
+      count_up_right = 1
+      count_up_left = 1
+      count_down_left = 1
+      count_down_right = 1
+
+      until column + count_up_right > 7 && row + count_up_right > 7
+        if column + count_up_right <= 7 && row + count_up_right <= 7
+          up_right = @board.check(column + count_up_right, row + count_up_right)
+          if up_right != "___" && !up_right.is_a?(King)
+            blocking_up_right = true
+          elsif up_right.is_a?(King) && up_right.color != piece.color &&
+              blocking_up_right == false
+            return true
+          end
+        end
+        count_up_right += 1
+      end
+
+      until column + count_up_left > 7 && row - count_up_left < 0
+        if column + count_up_left <= 7 && row - count_up_left >= 0
+          up_left = @board.check(column + count_up_left, row - count_up_left)
+          if up_left != "___" && !up_left.is_a?(King)
+            blocking_up_left = true
+          elsif up_left.is_a?(King) && up_left.color != piece.color &&
+              blocking_up_left == false
+            return true
+          end
+        end
+        count_up_left += 1
+      end
+
+      until column - count_down_left < 0 && row - count_down_left < 0
+        if column - count_down_left >= 0 && row - count_down_left >= 0
+          down_left = @board.check(column - count_down_left, row - count_down_left) 
+          if down_left != "___" && !down_left.is_a?(King)
+            blocking_down_left = true
+          elsif down_left.is_a?(King) && down_left.color != piece.color &&
+              blocking_down_left == false
+            return true
+          end
+        end
+        count_down_left += 1
+      end
+
+      until column - count_down_right < 0 && row + count_down_right > 7
+        if column - count_down_right >= 0 && row + count_down_right <= 7
+          down_right = @board.check(column - count_down_right, row + count_down_right) 
+          if down_right != "___" && !down_right.is_a?(King)
+            blocking_down_right = true
+          elsif down_right.is_a?(King) && down_right.color != piece.color &&
+              blocking_down_right == false
+            return true
+          end
+        end
+        count_down_right += 1
+      end
+    end
+    return false
+  end
+
+  # Returns true if rook puts king into check, false if not.
+  def rook_check?(piece, column, row)
+    if piece.is_a?(Rook)
+      blocking_up = false
+      blocking_left = false
+      blocking_down = false
+      blocking_right = false
+      count_up = 1
+      count_left = 1
+      count_down = 1
+      count_right = 1
+
+      until column + count_up > 7 
+        if column + count_up <= 7
+          up = @board.check(column + count_up, row)
+          if up != "___" && !up.is_a?(King)
+            blocking_up = true
+          elsif up.is_a?(King) && up.color != piece.color &&
+              blocking_up == false
+            return true
+          end
+        end
+        count_up += 1
+      end
+
+      until row - count_left < 0
+        if row - count_left >= 0
+          left = @board.check(column, row - count_left)
+          if left != "___" && !left.is_a?(King)
+            blocking_left = true
+          elsif left.is_a?(King) && left.color != piece.color &&
+              blocking_left == false
+            return true
+          end
+        end
+        count_left += 1
+      end
+
+      until column - count_down < 0
+        if column - count_down >= 0 
+          down = @board.check(column - count_down, row) 
+          if down != "___" && !down.is_a?(King)
+            blocking_down = true
+          elsif down.is_a?(King) && down.color != piece.color &&
+              blocking_down == false
+            return true
+          end
+        end
+        count_down += 1
+      end
+
+      until row + count_right > 7
+        if row + count_right <= 7
+          right = @board.check(column, row + count_right) 
+          if right != "___" && !right.is_a?(King)
+            blocking_right = true
+          elsif right.is_a?(King) && right.color != piece.color &&
+              blocking_right == false
+            return true
+          end
+        end
+        count_right += 1
+      end
+    end
+    return false
+  end
+
+  # Returns true if queen puts king into check, false if not.
+  def queen_check?(piece, column, row)
+    if piece.is_a?(Queen)
+      blocking_up_right = false
+      blocking_up_left = false
+      blocking_down_left = false
+      blocking_down_right = false
+      count_up_right = 1
+      count_up_left = 1
+      count_down_left = 1
+      count_down_right = 1
+      
+      until column + count_up_right > 7 && row + count_up_right > 7
+        if column + count_up_right <= 7 && row + count_up_right <= 7
+          up_right = @board.check(column + count_up_right, row + count_up_right)
+          if up_right != "___" && !up_right.is_a?(King)
+            blocking_up_right = true
+          elsif up_right.is_a?(King) && up_right.color != piece.color &&
+              blocking_up_right == false
+            return true
+          end
+        end
+        count_up_right += 1
+      end
+
+      until column + count_up_left > 7 && row - count_up_left < 0
+        if column + count_up_left <= 7 && row - count_up_left >= 0
+          up_left = @board.check(column + count_up_left, row - count_up_left)
+          if up_left != "___" && !up_left.is_a?(King)
+            blocking_up_left = true
+          elsif up_left.is_a?(King) && up_left.color != piece.color &&
+              blocking_up_left == false
+            return true
+          end
+        end
+        count_up_left += 1
+      end
+
+      until column - count_down_left < 0 && row - count_down_left < 0
+        if column - count_down_left >= 0 && row - count_down_left >= 0
+          down_left = @board.check(column - count_down_left, row - count_down_left) 
+          if down_left != "___" && !down_left.is_a?(King)
+            blocking_down_left = true
+          elsif down_left.is_a?(King) && down_left.color != piece.color &&
+              blocking_down_left == false
+            return true
+          end
+        end
+        count_down_left += 1
+      end
+
+      until column - count_down_right < 0 && row + count_down_right > 7
+        if column - count_down_right >= 0 && row + count_down_right <= 7
+          down_right = @board.check(column - count_down_right, row + count_down_right) 
+          if down_right != "___" && !down_right.is_a?(King)
+            blocking_down_right = true
+          elsif down_right.is_a?(King) && down_right.color != piece.color &&
+              blocking_down_right == false
+            return true
+          end
+        end
+        count_down_right += 1
+      end
+
+      blocking_up = false
+      blocking_left = false
+      blocking_down = false
+      blocking_right = false
+      count_up = 1
+      count_left = 1
+      count_down = 1
+      count_right = 1
+
+      until column + count_up > 7 
+        if column + count_up <= 7
+          up = @board.check(column + count_up, row)
+          if up != "___" && !up.is_a?(King)
+            blocking_up = true
+          elsif up.is_a?(King) && up.color != piece.color &&
+              blocking_up == false
+            return true
+          end
+        end
+        count_up += 1
+      end
+
+      until row - count_left < 0
+        if row - count_left >= 0
+          left = @board.check(column, row - count_left)
+          if left != "___" && !left.is_a?(King)
+            blocking_left = true
+          elsif left.is_a?(King) && left.color != piece.color &&
+              blocking_left == false
+            return true
+          end
+        end
+        count_left += 1
+      end
+
+      until column - count_down < 0
+        if column - count_down >= 0 
+          down = @board.check(column - count_down, row) 
+          if down != "___" && !down.is_a?(King)
+            blocking_down = true
+          elsif down.is_a?(King) && down.color != piece.color &&
+              blocking_down == false
+            return true
+          end
+        end
+        count_down += 1
+      end
+
+      until row + count_right > 7
+        if row + count_right <= 7
+          right = @board.check(column, row + count_right) 
+          if right != "___" && !right.is_a?(King)
+            blocking_right = true
+          elsif right.is_a?(King) && right.color != piece.color &&
+              blocking_right == false
+            return true
+          end
+        end
+        count_right += 1
+      end
+    end
+    return false
+  end
+
   # Determines if the chosen destination space is beyond the location of a
   # piece in @bishop_path_pieces and returns true if so, false if not. This
   # method prevents "jumping" over pieces to reach the destination square.  
-  def block_bishop?(piece, column, row)
+  def block_bishop?(piece, column, row)  
     @bishop_path_pieces.each do |item|
       if item[0] - piece.column > 0 && item[1] - piece.row > 0 # up right
         if column > item[0] && row > item[1]
@@ -748,10 +1087,11 @@ class Chess
   # if the piece is a pawn that can't make any diagonal moves.
   def alternate_pawn_moves(piece, column, row)
     if piece.color == "white"
-      if column - piece.column == 1 && piece.row == row
+      if column - piece.column == 1 && piece.row == row && @board.space_open?(column, row)
         make_legal_move(piece, column, row)
         return piece
-      elsif piece.column == 1 && column - piece.column == 2 && piece.row == row   
+      elsif piece.column == 1 && column - piece.column == 2 && piece.row == row &&
+          @board.space_open?(column, row) && @board.space_open?(column - 1, row)
         make_legal_move(piece, column, row)
         if en_passant_white?(piece)
           @en_passant = piece
@@ -763,10 +1103,11 @@ class Chess
         puts "That move is not possible."
       end
     elsif piece.color == "black"
-      if piece.column - column == 1 && piece.row == row
+      if piece.column - column == 1 && piece.row == row && @board.space_open?(column, row)
         make_legal_move(piece, column, row)
         return piece
-      elsif piece.column == 6 && piece.column - column == 2 && piece.row == row
+      elsif piece.column == 6 && piece.column - column == 2 && piece.row == row &&
+          @board.space_open?(column, row) && @board.space_open?(column + 1, row)
         make_legal_move(piece, column, row)
         if en_passant_black?(piece)
           @en_passant = piece
@@ -879,44 +1220,60 @@ class Chess
   # Checks pieces diagonal to pawns to determine if the pawn is allowed to move
   # diagonally to capture them.  Returns true if so and false if not.
   def pawn_diagonal?(piece, column, row)
-    if piece.color == "white" && !@board.space_open?(piece.column + 1, piece.row + 1) && 
+    if piece.color == "white" && !@board.space_open?(piece.column + 1, piece.row + 1) &&
+        !@board.space_open?(piece.column + 1, piece.row - 1) &&
+        @board.check(piece.column + 1, piece.row + 1) != nil &&
+        @board.check(piece.column + 1, piece.row - 1) != nil &&
+        @board.check(piece.column + 1, piece.row + 1).color == "black" &&
+        @board.check(piece.column + 1, piece.row - 1).color == "black"
+      if column - piece.column == 1 && row - piece.row == 1
+        return true 
+      elsif column - piece.column == 1 && piece.row - row == 1
+        return true
+      end
+    elsif piece.color == "white" && !@board.space_open?(piece.column + 1, piece.row + 1) && 
         @board.check(piece.column + 1, piece.row + 1) != nil &&
         @board.check(piece.column + 1, piece.row + 1).color == "black" &&
         @board.space_open?(piece.column + 1, piece.row - 1)
-      if @board.check(piece.column + 1, piece.row + 1) == @board.check(column, row)
+      if column - piece.column == 1 && row - piece.row == 1
         return true 
-      else
-        return false
       end
     elsif piece.color == "white" && !@board.space_open?(piece.column + 1, piece.row - 1) &&
         @board.check(piece.column + 1, piece.row - 1) != nil &&
         @board.check(piece.column + 1, piece.row - 1).color == "black" &&
         @board.space_open?(piece.column + 1, piece.row + 1)
-      if @board.check(piece.column + 1, piece.row - 1) == @board.check(column, row)
+      if column - piece.column == 1 && piece.row - row == 1
         return true 
-      else
-        return false
       end
     elsif piece.color == "white" && @board.space_open?(piece.column + 1, piece.row + 1) && 
         @board.space_open?(piece.column + 1, piece.row - 1)
       return false
+    end
+
+    if piece.color == "black" && !@board.space_open?(piece.column - 1, piece.row + 1) &&
+        !@board.space_open?(piece.column - 1, piece.row - 1) &&
+        @board.check(piece.column - 1, piece.row + 1) != nil &&
+        @board.check(piece.column - 1, piece.row - 1) != nil &&
+        @board.check(piece.column - 1, piece.row + 1).color == "white" &&
+        @board.check(piece.column - 1, piece.row - 1).color == "white"
+      if piece.column - column == 1 && row - piece.row == 1
+        return true 
+      elsif piece.column - column == 1 && piece.row - row == 1
+        return true
+      end
     elsif piece.color == "black" && !@board.space_open?(piece.column - 1, piece.row + 1) && 
         @board.check(piece.column - 1, piece.row + 1) != nil &&
         @board.check(piece.column - 1, piece.row + 1).color == "white" &&
         @board.space_open?(piece.column - 1, piece.row - 1)
-      if @board.check(piece.column - 1, piece.row + 1) == @board.check(column, row)
+      if piece.column - column == 1 && row - piece.row == 1
         return true 
-      else
-        return false
       end
     elsif piece.color == "black" && !@board.space_open?(piece.column - 1, piece.row - 1) &&
         @board.check(piece.column - 1, piece.row - 1) != nil &&
         @board.check(piece.column - 1, piece.row - 1).color == "white" &&
         @board.space_open?(piece.column - 1, piece.row + 1)
-      if @board.check(piece.column - 1, piece.row - 1) == @board.check(column, row)
+      if piece.column - column == 1 && piece.row - row == 1
         return true 
-      else
-        return false
       end
     elsif piece.color == "black" && @board.space_open?(piece.column - 1, piece.row + 1) && 
         @board.space_open?(piece.column - 1, piece.row - 1)
@@ -969,12 +1326,33 @@ class Chess
     end
   end
 
+  # Checks if current piece has moved to a location that puts the opponent's 
+  # king in check.  If so, switches @in_check to true and displays a message.
+  def verify_if_check_occurs(piece, column, row)
+    @opponent = nil
+    @current_player.color == "White" ? @opponent = "Black" : @opponent = "White"
+    if white_pawn_check?(piece, column, row) || black_pawn_check?(piece, column, row) ||
+        bishop_check?(piece, column, row) || rook_check?(piece, column, row) ||
+        queen_check?(piece, column, row) || knight_check?(piece, column, row)
+      @in_check = true
+      if @in_check == true
+        puts ""
+        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+        puts "#{@current_player.color} has the #{@opponent} King in check!"
+        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+      end
+    else
+      @in_check = false
+    end
+  end
+
   # Moves piece to destination square and empties previous position. If piece
   # is a pawn moving into the 8th rank, allows piece to be promoted.
   def make_legal_move(piece, column, row)
     @board.empty_space(@initial_column, @initial_row)
     @board.move(piece, column, row)
     check_for_castling_movement(piece)
+    verify_if_check_occurs(piece, column, row)
     if piece.is_a?(Pawn) && piece.color == "white" && piece.column == 7
       choice = choose_promotion(piece, column, row)
       piece = promote_white(piece, column, row, choice)
