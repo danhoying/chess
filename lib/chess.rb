@@ -15,6 +15,7 @@ class Chess
     @board = Board.new
     @en_passant = []
     @in_check = false
+    @check_piece = []
     @white_king_moves = 0
     @left_white_rook_moves = 0
     @right_white_rook_moves = 0
@@ -1335,6 +1336,7 @@ class Chess
         bishop_check?(piece, column, row) || rook_check?(piece, column, row) ||
         queen_check?(piece, column, row) || knight_check?(piece, column, row)
       @in_check = true
+      @check_piece = piece
       if @in_check == true
         puts ""
         puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"

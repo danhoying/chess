@@ -1,5 +1,5 @@
 --- !ruby/object:RSpec::ExampleGroups::Chess::SavingAndLoadingTheGame
-__inspect_output: '"saves the game" (./spec/chess_spec.rb:79)'
+__inspect_output: '"saves the game" (./spec/chess_spec.rb:92)'
 __memoized: !ruby/object:RSpec::Core::MemoizedHelpers::ThreadsafeMemoized
   memoized: {}
   mutex: !ruby/object:RSpec::Core::ReentrantMutex
@@ -8,148 +8,149 @@ __memoized: !ruby/object:RSpec::Core::MemoizedHelpers::ThreadsafeMemoized
     mutex: !ruby/object:Mutex {}
 board: !ruby/object:Board
   white_pieces:
-  - &9 !ruby/object:Pawn
-    color: white
-    symbol: "♟"
-    column: 1
-    row: 0
   - &10 !ruby/object:Pawn
     color: white
     symbol: "♟"
     column: 1
-    row: 1
+    row: 0
   - &11 !ruby/object:Pawn
     color: white
     symbol: "♟"
     column: 1
-    row: 2
+    row: 1
   - &12 !ruby/object:Pawn
     color: white
     symbol: "♟"
     column: 1
-    row: 3
+    row: 2
   - &13 !ruby/object:Pawn
     color: white
     symbol: "♟"
     column: 1
-    row: 4
+    row: 3
   - &14 !ruby/object:Pawn
     color: white
     symbol: "♟"
     column: 1
-    row: 5
+    row: 4
   - &15 !ruby/object:Pawn
     color: white
     symbol: "♟"
     column: 1
-    row: 6
+    row: 5
   - &16 !ruby/object:Pawn
     color: white
     symbol: "♟"
     column: 1
+    row: 6
+  - &17 !ruby/object:Pawn
+    color: white
+    symbol: "♟"
+    column: 1
     row: 7
-  - &1 !ruby/object:Rook
+  - &3 !ruby/object:Rook
     color: white
     symbol: "♜"
     column: 0
     row: 0
-  - &2 !ruby/object:Knight
+  - &4 !ruby/object:Knight
     color: white
     symbol: "♞"
     column: 0
     row: 1
-  - &3 !ruby/object:Bishop
+  - &5 !ruby/object:Bishop
     color: white
     symbol: "♝"
     column: 0
     row: 2
-  - &4 !ruby/object:Queen
+  - &6 !ruby/object:Queen
     color: white
     symbol: "♛"
     column: 0
     row: 3
-  - &5 !ruby/object:King
+  - &1 !ruby/object:King
     color: white
     symbol: "♚"
     column: 0
     row: 4
-  - &6 !ruby/object:Bishop
+  - &7 !ruby/object:Bishop
     color: white
     symbol: "♝"
     column: 0
     row: 5
-  - &7 !ruby/object:Knight
+  - &8 !ruby/object:Knight
     color: white
     symbol: "♞"
     column: 0
     row: 6
-  - &8 !ruby/object:Rook
+  - &9 !ruby/object:Rook
     color: white
     symbol: "♜"
     column: 0
     row: 7
+  white_king: *1
   black_pieces:
-  - &17 !ruby/object:Pawn
-    color: black
-    symbol: "♙"
-    column: 6
-    row: 0
   - &18 !ruby/object:Pawn
     color: black
     symbol: "♙"
     column: 6
-    row: 1
+    row: 0
   - &19 !ruby/object:Pawn
     color: black
     symbol: "♙"
     column: 6
-    row: 2
+    row: 1
   - &20 !ruby/object:Pawn
     color: black
     symbol: "♙"
     column: 6
-    row: 3
+    row: 2
   - &21 !ruby/object:Pawn
     color: black
     symbol: "♙"
     column: 6
-    row: 4
+    row: 3
   - &22 !ruby/object:Pawn
     color: black
     symbol: "♙"
     column: 6
-    row: 5
+    row: 4
   - &23 !ruby/object:Pawn
     color: black
     symbol: "♙"
     column: 6
-    row: 6
+    row: 5
   - &24 !ruby/object:Pawn
     color: black
     symbol: "♙"
     column: 6
+    row: 6
+  - &25 !ruby/object:Pawn
+    color: black
+    symbol: "♙"
+    column: 6
     row: 7
-  - &25 !ruby/object:Rook
+  - &26 !ruby/object:Rook
     color: black
     symbol: "♖"
     column: 7
     row: 0
-  - &26 !ruby/object:Knight
+  - &27 !ruby/object:Knight
     color: black
     symbol: "♘"
     column: 7
     row: 1
-  - &27 !ruby/object:Bishop
+  - &28 !ruby/object:Bishop
     color: black
     symbol: "♗"
     column: 7
     row: 2
-  - &28 !ruby/object:Queen
+  - &29 !ruby/object:Queen
     color: black
     symbol: "♕"
     column: 7
     row: 3
-  - &29 !ruby/object:King
+  - &2 !ruby/object:King
     color: black
     symbol: "♔"
     column: 7
@@ -169,23 +170,24 @@ board: !ruby/object:Board
     symbol: "♖"
     column: 7
     row: 7
+  black_king: *2
   board:
-  - - *1
-    - *2
-    - *3
+  - - *3
     - *4
     - *5
     - *6
+    - *1
     - *7
     - *8
-  - - *9
-    - *10
+    - *9
+  - - *10
     - *11
     - *12
     - *13
     - *14
     - *15
     - *16
+    - *17
   - - ___
     - ___
     - ___
@@ -218,19 +220,19 @@ board: !ruby/object:Board
     - ___
     - ___
     - ___
-  - - *17
-    - *18
+  - - *18
     - *19
     - *20
     - *21
     - *22
     - *23
     - *24
-  - - *25
-    - *26
+    - *25
+  - - *26
     - *27
     - *28
     - *29
+    - *2
     - *30
     - *31
     - *32

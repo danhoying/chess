@@ -43,6 +43,16 @@ describe "Chess" do
     end
   end
 
+  context "castling" do
+    it "identifies castling opportunities" do
+      expect(game.castling_possible?(@board)).to eql false
+      @board.empty_space(0, 1)
+      @board.empty_space(0, 2)
+      @board.empty_space(0, 3)
+      expect(game.castling_possible?(@board)).to eql true
+    end
+  end
+
   context "selecting a piece" do
     it "selects a piece" do
       allow(game).to receive(:gets).and_return('b1')
