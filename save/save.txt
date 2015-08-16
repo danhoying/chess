@@ -1,5 +1,5 @@
 --- !ruby/object:RSpec::ExampleGroups::Chess::SavingAndLoadingTheGame
-__inspect_output: '"saves the game" (./spec/chess_spec.rb:92)'
+__inspect_output: '"saves the game" (./spec/chess_spec.rb:125)'
 __memoized: !ruby/object:RSpec::Core::MemoizedHelpers::ThreadsafeMemoized
   memoized: {}
   mutex: !ruby/object:RSpec::Core::ReentrantMutex

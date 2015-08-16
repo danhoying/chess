@@ -14,8 +14,14 @@ class Chess
     @current_piece = Piece.new("white", nil, nil, nil)
     @board = Board.new
     @en_passant = []
-    @in_check = false
-    @check_piece = []
+    @in_check = []
+    @checkmate = false
+
+    @white_castle_long = false
+    @white_castle_short = false
+    @black_castle_long = false
+    @black_castle_short = false
+
     @white_king_moves = 0
     @left_white_rook_moves = 0
     @right_white_rook_moves = 0
@@ -33,7 +39,7 @@ class Chess
   end
 
   def game_turn
-    until false
+    until @checkmate
       display_save_message
       @board.display_board
       if castling_possible?(@board)
@@ -42,10 +48,28 @@ class Chess
         select_piece
         move_piece
       end
+      display_past_move
       if @en_passant != []
         en_passant_cancel(@current_piece)
       end
-      display_past_move
+      if @in_check != [] && @in_check.color == @current_player.color.downcase
+        @checkmate = true
+      end
+      if @checkmate
+        @opponent = nil
+        @current_player.color == "White" ? @opponent = "Black" : @opponent = "White"
+        @board.display_board
+        puts ""
+        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+        puts "Congratulations, #{@opponent}! You win! The #{@current_player.color} King has fallen."
+        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+        puts ""
+        if play_again?
+          new_game
+        else
+          exit
+        end
+      end
       switch_players
     end
   end
@@ -69,6 +93,7 @@ class Chess
     puts "#{@current_player.color}, you can perform short castling or long castling."
     print "Please type 'short' to do short castling or 'long' to do long castling: "
     input = gets.chomp
+    return input
   end
 
   # Determines if all castling conditions are met. If so, changes an instance
@@ -235,7 +260,7 @@ class Chess
   end
 
   def play_again?
-    print "Do you want to play again? "
+    print "Do you want to play again? (Please enter 'y' if you would)."
     entry = gets.chomp.downcase
     if entry.include? "y"
       return true
@@ -243,6 +268,12 @@ class Chess
       return false
     end
   end 
+
+  def new_game
+    puts ""
+    game = Chess.new
+    game.start_game
+  end
 
   def display_intro
     puts ""
@@ -326,8 +357,8 @@ class Chess
       puts "A move is not possible here. Please select another piece."
       select_piece
     elsif piece.is_a?(Pawn) && piece.color == "black" && @en_passant == [] &&
-      @board.check(column -1, row + 1) != nil &&
-      @board.check(column -1, row - 1) != nil &&
+      @board.check(column - 1, row + 1) != nil &&
+      @board.check(column - 1, row - 1) != nil &&
       !@board.space_open?(column - 1, row) && @board.space_open?(column - 1, row + 1) && 
         @board.space_open?(column - 1, row - 1)
       puts "A move is not possible here. Please select another piece."
@@ -511,12 +542,13 @@ class Chess
 
   # Runs through all possible moves and determines if the current piece is 
   # being blocked and cannot move. If so, allows the player to choose a new
-  # piece.
+  # piece. Also checks if king has no possible moves when in check.
   def king_impossible(piece, column, row)
     if piece.is_a?(King) 
       nearby = []
       items = 0
       count = 1
+      checks = 0
       c = piece.column
       r = piece.row
       possible_moves = []
@@ -539,10 +571,29 @@ class Chess
         else 
           items = 0
         end
+        if @in_check == piece
+          @board.move(piece, i[0], i[1])
+          if king_in_check?
+            checks += 1
+            @board.move(piece, @initial_column, @initial_row)
+            @board.empty_space(i[0], i[1])
+          elsif !king_in_check?
+            checks = 0
+          end
+          if checks == 0
+            piece.column = @initial_column
+            piece.row = @initial_row
+          end
+        end
       end
       if items == nearby.count
         puts "A move is not possible here. Please select another piece."
         select_piece 
+      end
+      if checks == nearby.count
+        puts ""
+        puts "Your king cannot make any moves without going into check!"
+        select_piece
       end
     end
   end
@@ -605,7 +656,7 @@ class Chess
   end
 
   # Makes sure pieces can only make legal moves. Also controls pawn movement
-  # based on #pawn_diagonal.
+  # based on #pawn_diagonal and displays a message if a king is in check.
   def ensure_correct_move(piece, column, row)
     if !piece.move_possible?(piece, column, row)
       puts "That move is not possible."
@@ -632,9 +683,14 @@ class Chess
         make_legal_move(piece, column, row)
         return piece
       elsif piece.is_a?(King)
-        if @in_check == true
+        @board.move(piece, column, row)
+        if king_in_check?
           puts "That move puts your king into check!  Choose another move."
-        else
+          @board.move(piece, @initial_column, @initial_row)
+          @board.empty_space(column, row)
+        elsif !king_in_check?
+          piece.column = @initial_column
+          piece.row = @initial_row
           make_legal_move(piece, column, row)
           return piece
         end
@@ -659,6 +715,7 @@ class Chess
         if @board.check(item[0], item[1]) != "___" && 
             @board.check(item[0], item[1]).color != piece.color &&
             @board.check(item[0], item[1]).is_a?(King)
+          @in_check = @board.check(item[0], item[1])
           return true
         end
       end
@@ -682,6 +739,7 @@ class Chess
         if @board.check(item[0], item[1]) != "___" && 
             @board.check(item[0], item[1]).color != piece.color &&
             @board.check(item[0], item[1]).is_a?(King)
+          @in_check = @board.check(item[0], item[1])
           return true
         end
       end
@@ -689,6 +747,7 @@ class Chess
     return false
   end
 
+  # Returns true if knight puts king into check, false if not.
   def knight_check?(piece, column, row)
     if piece.is_a?(Knight)
       c = piece.column
@@ -705,6 +764,7 @@ class Chess
         if @board.check(item[0], item[1]) != "___" && 
             @board.check(item[0], item[1]).color != piece.color &&
             @board.check(item[0], item[1]).is_a?(King)
+          @in_check = @board.check(item[0], item[1])
           return true
         end
       end
@@ -731,6 +791,7 @@ class Chess
             blocking_up_right = true
           elsif up_right.is_a?(King) && up_right.color != piece.color &&
               blocking_up_right == false
+            @in_check = up_right
             return true
           end
         end
@@ -744,6 +805,7 @@ class Chess
             blocking_up_left = true
           elsif up_left.is_a?(King) && up_left.color != piece.color &&
               blocking_up_left == false
+            @in_check = up_left
             return true
           end
         end
@@ -757,6 +819,7 @@ class Chess
             blocking_down_left = true
           elsif down_left.is_a?(King) && down_left.color != piece.color &&
               blocking_down_left == false
+            @in_check = down_left
             return true
           end
         end
@@ -770,6 +833,7 @@ class Chess
             blocking_down_right = true
           elsif down_right.is_a?(King) && down_right.color != piece.color &&
               blocking_down_right == false
+            @in_check = down_right
             return true
           end
         end
@@ -798,6 +862,7 @@ class Chess
             blocking_up = true
           elsif up.is_a?(King) && up.color != piece.color &&
               blocking_up == false
+            @in_check = up
             return true
           end
         end
@@ -811,6 +876,7 @@ class Chess
             blocking_left = true
           elsif left.is_a?(King) && left.color != piece.color &&
               blocking_left == false
+            @in_check = left
             return true
           end
         end
@@ -824,6 +890,7 @@ class Chess
             blocking_down = true
           elsif down.is_a?(King) && down.color != piece.color &&
               blocking_down == false
+            @in_check = up
             return true
           end
         end
@@ -837,6 +904,7 @@ class Chess
             blocking_right = true
           elsif right.is_a?(King) && right.color != piece.color &&
               blocking_right == false
+            @in_check = right
             return true
           end
         end
@@ -865,6 +933,7 @@ class Chess
             blocking_up_right = true
           elsif up_right.is_a?(King) && up_right.color != piece.color &&
               blocking_up_right == false
+            @in_check = up_right
             return true
           end
         end
@@ -878,6 +947,7 @@ class Chess
             blocking_up_left = true
           elsif up_left.is_a?(King) && up_left.color != piece.color &&
               blocking_up_left == false
+            @in_check = up_left
             return true
           end
         end
@@ -891,6 +961,7 @@ class Chess
             blocking_down_left = true
           elsif down_left.is_a?(King) && down_left.color != piece.color &&
               blocking_down_left == false
+            @in_check = down_left
             return true
           end
         end
@@ -904,6 +975,7 @@ class Chess
             blocking_down_right = true
           elsif down_right.is_a?(King) && down_right.color != piece.color &&
               blocking_down_right == false
+            @in_check = down_right
             return true
           end
         end
@@ -926,6 +998,7 @@ class Chess
             blocking_up = true
           elsif up.is_a?(King) && up.color != piece.color &&
               blocking_up == false
+            @in_check = up
             return true
           end
         end
@@ -939,6 +1012,7 @@ class Chess
             blocking_left = true
           elsif left.is_a?(King) && left.color != piece.color &&
               blocking_left == false
+            @in_check = left
             return true
           end
         end
@@ -952,6 +1026,7 @@ class Chess
             blocking_down = true
           elsif down.is_a?(King) && down.color != piece.color &&
               blocking_down == false
+            @in_check = down
             return true
           end
         end
@@ -965,6 +1040,7 @@ class Chess
             blocking_right = true
           elsif right.is_a?(King) && right.color != piece.color &&
               blocking_right == false
+            @in_check = right
             return true
           end
         end
@@ -1129,7 +1205,6 @@ class Chess
     c = piece.column
     r = piece.row
     possible = []
-    neighbors = []
     check_sides = [[c, r - 1], [c, r + 1]]
     check_sides.each do |check|
       if check.all? { |value| value >= 0 } && check.all? { |value| value <= 7 }
@@ -1151,7 +1226,6 @@ class Chess
     c = piece.column
     r = piece.row
     possible = []
-    neighbors = []
     check_sides = [[c, r - 1], [c, r + 1]]
     check_sides.each do |check|
       if check.all? { |value| value >= 0 } && check.all? { |value| value <= 7 }
@@ -1332,22 +1406,68 @@ class Chess
   def verify_if_check_occurs(piece, column, row)
     @opponent = nil
     @current_player.color == "White" ? @opponent = "Black" : @opponent = "White"
-    if white_pawn_check?(piece, column, row) || black_pawn_check?(piece, column, row) ||
-        bishop_check?(piece, column, row) || rook_check?(piece, column, row) ||
-        queen_check?(piece, column, row) || knight_check?(piece, column, row)
-      @in_check = true
-      @check_piece = piece
-      if @in_check == true
-        puts ""
-        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
-        puts "#{@current_player.color} has the #{@opponent} King in check!"
-        puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
-      end
+    if king_in_check?
+      puts ""
+      puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
+      puts "#{@current_player.color} has the #{@opponent} King in check!"
+      puts "~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~+~"
     else
-      @in_check = false
+      @in_check = []
     end
   end
 
+  # Checks every piece and returns true if a king is put into check by a piece.
+  def king_in_check?
+    @board.white_pieces.each do |piece|
+      if piece.is_a?(Pawn)
+        if white_pawn_check?(piece, piece.column, piece.row)
+          return true
+        end
+      elsif piece.is_a?(Bishop)
+        if bishop_check?(piece, piece.column, piece.row)
+          return true
+        end
+      elsif piece.is_a?(Rook)
+        if rook_check?(piece, piece.column, piece.row)
+          return true
+        end
+      elsif piece.is_a?(Queen)
+        if queen_check?(piece, piece.column, piece.row)
+          return true
+        end
+      elsif piece.is_a?(Knight)
+        if knight_check?(piece, piece.column, piece.row)
+          return true
+        end
+      end
+    end
+    @board.black_pieces.each do |piece|
+      if piece.is_a?(Pawn)
+        if black_pawn_check?(piece, piece.column, piece.row)
+          return true
+        end
+      elsif piece.is_a?(Bishop)
+        if bishop_check?(piece, piece.column, piece.row)
+          return true
+        end
+      elsif piece.is_a?(Rook)
+        if rook_check?(piece, piece.column, piece.row)
+          return true
+        end
+      elsif piece.is_a?(Queen)
+        if queen_check?(piece, piece.column, piece.row)
+          return true
+        end
+      elsif piece.is_a?(Knight)
+        if knight_check?(piece, piece.column, piece.row)
+          return true
+        end
+      end
+    end
+    @in_check = []
+    return false
+  end
+          
   # Moves piece to destination square and empties previous position. If piece
   # is a pawn moving into the 8th rank, allows piece to be promoted.
   def make_legal_move(piece, column, row)

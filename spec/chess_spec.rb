@@ -44,12 +44,48 @@ describe "Chess" do
   end
 
   context "castling" do
-    it "identifies castling opportunities" do
+    before do
+      @white_castle_short = true
+    end
+    it "identifies white castling opportunities" do
       expect(game.castling_possible?(@board)).to eql false
       @board.empty_space(0, 1)
       @board.empty_space(0, 2)
       @board.empty_space(0, 3)
       expect(game.castling_possible?(@board)).to eql true
+    end
+
+    it "identifies black castling opportunities" do
+      @opponent = Pawn.new("black", ("\u265F"), 6, 0)
+      game.current_player = @opponent
+      expect(game.castling_possible?(@board)).to eql false
+      @board.empty_space(7, 5)
+      @board.empty_space(7, 6)
+      expect(game.castling_possible?(@board)).to eql true
+    end
+
+    before do
+      @white_castle_short = true
+    end
+    it "performs the white castling move" do
+      @board.empty_space(0, 1)
+      @board.empty_space(0, 2)
+      @board.empty_space(0, 3)
+      expect(game.castling_possible?(@board)).to eql true
+      game.perform_castling(@board)
+      expect(@board.check(0, 2)).to be_an_instance_of King
+      expect(@board.check(0, 3)).to be_an_instance_of Rook
+    end
+
+    it "performs the black castling move" do
+      @opponent = Pawn.new("black", ("\u265F"), 6, 0)
+      game.current_player = @opponent
+      @board.empty_space(7, 5)
+      @board.empty_space(7, 6)
+      expect(game.castling_possible?(@board)).to eql true
+      game.perform_castling(@board)
+      expect(@board.check(7, 6)).to be_an_instance_of King
+      expect(@board.check(7, 5)).to be_an_instance_of Rook
     end
   end
 
@@ -107,6 +143,18 @@ describe "Chess" do
       expect(game.play_again?).to be true
       allow(game).to receive(:gets).and_return('n', '4', '/n')
       expect(game.play_again?).to be false
+    end
+  end
+
+  context "promotion" do
+    it "checks for player's promotion choice" do
+      @current_piece = Pawn.new("white", ("\u265F"), 7, 0)
+      allow(game).to receive(:gets).and_return('q')
+      expect(game.choose_promotion(@current_piece, 7, 0)).to eql 'q'
+      choice = 'q'
+      expect(game.promote_white(@current_piece, 7, 0, choice)).to be_an_instance_of Queen
+      choice = 'r'
+      expect(game.promote_white(@current_piece, 7, 0, choice)).to be_an_instance_of Rook
     end
   end
 
@@ -224,14 +272,20 @@ describe "Chess" do
         expect(@current_piece.move_possible?(@current_piece, 5, 3)).to eql true
       end
 
+      # The test below doesn't return true for some reason.  I'm probably doing
+      # the test wrong since the game performs this move correctly.
+
       # it "checks for correct diagonal movement" do
-      #   column = 5
-      #   row = 5
-      #   @current_piece = Pawn.new("white", ("\u265F"), 3, 4)
-      #   @board.move(@current_piece, 4, 4)
-      #   @opponent = Pawn.new("black", ("\u265F"), 6, 5)
-      #   @board.move(@opponent, column, row)
-      #   expect(game.pawn_diagonal?(@current_piece, column, row)).to eql true
+      #   current_piece = @board.check(1, 4)
+      #   @board.move(current_piece, 2, 4)
+      #   @board.move(current_piece, 3, 4)
+      #   opponent = @board.check(6, 5)
+      #   @board.move(opponent, 5, 5)
+      #   @board.move(opponent, 4, 5)
+      #   expect(@board.check(3, 4)).to eql current_piece
+      #   expect(@board.check(4, 5)).to eql opponent
+      #   expect(game.pawn_diagonal?(opponent, 3, 4)).to eql true
+      #   expect(game.pawn_diagonal?(current_piece, 4, 5)).to eql true
       # end
     end
   end

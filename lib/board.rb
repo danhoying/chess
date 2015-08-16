@@ -119,4 +119,12 @@ class Board
       return @board[column][row]
     end
   end
+
+  def white_pieces
+    return @white_pieces
+  end
+
+  def black_pieces
+    return @black_pieces
+  end
 end
